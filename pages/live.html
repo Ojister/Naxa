@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live — Nexa</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="../index.html" class="logo"><div class="logo-icon">✦</div><span class="logo-text">Nexa</span></a>
+</nav>
+<div class="app-content" style="padding-bottom: 90px;">
+  <div class="section-title">Live Streaming <span class="demo-badge">DEMO</span></div>
+  <div class="empty-state">
+    📡<br><br>
+    Live streaming isn't connected to a real video service yet.<br><br>
+    This is a placeholder — adding real live video would require a streaming provider (like Mux, Agora, or Livepeer), which typically has usage-based costs.
+  </div>
+</div>
+<nav class="bottom-nav" id="bottomNav"></nav>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/bottom-nav.js"></script>
+<script>
+(async () => { const u = await requireAuth(); if (!u) return; renderBottomNav(""); })();
+</script>
+</body>
+</html>
