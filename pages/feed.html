@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feed — Nexa</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="../index.html" class="logo">
+    <div class="logo-icon">✦</div>
+    <span class="logo-text">Nexa</span>
+  </a>
+  <a href="profile.html" class="avatar" id="navAvatar" style="width:34px;height:34px;font-size:13px;">?</a>
+</nav>
+
+<div class="app-content" style="padding-bottom: 90px;">
+  <div class="section-title">Community Feed</div>
+
+  <form id="postForm" class="card" style="margin-bottom:16px;">
+    <textarea id="postContent" placeholder="Share something with the community..." style="width:100%; background:transparent; border:none; color:var(--text-primary); font-size:14px; resize:none; min-height:60px; outline:none;"></textarea>
+    <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+      <button type="submit" class="btn btn-primary">Post</button>
+    </div>
+  </form>
+
+  <div id="postsList"></div>
+  <div class="loading-spinner" id="loadingSpinner"></div>
+</div>
+
+<nav class="bottom-nav" id="bottomNav"></nav><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/bottom-nav.js"></script>
+<script>
+let currentUser = null;
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  const profile = await ensureProfile(currentUser);
+  document.getElementById("navAvatar").textContent = getInitials(profile.username || currentUser.email);
+
+  renderBottomNav("feed");
+  await loadPosts();
+}
+
+async function loadPosts() {
+  const spinner = document.getElementById("loadingSpinner");
+  spinner.style.display = "block";
+
+  const { data: posts, error } = await supabaseClient
+    .from("posts")
+    .select("*, profiles(username)")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  spinner.style.display = "none";
+  const list = document.getElementById("postsList");
+
+  if (error || !posts || posts.length === 0) {
+    list.innerHTML = '<div class="empty-state">No posts yet. Be the first to share something!</div>';
+    return;
+  }
+
+  list.innerHTML = posts.map(p => {
+    const author = p.profiles?.username || "Unknown";
+    const time = new Date(p.created_at).toLocaleString();
+    return `
+      <div class="post-card">
+        <div class="post-header">
+          <div class="avatar">${getInitials(author)}</div>
+          <div>
+            <div class="post-author">${escapeHtml(author)}</div>
+            <div class="post-time">${time}</div>
+          </div>
+        </div>
+        <div class="post-body">${escapeHtml(p.content)}</div>
+        <div class="post-actions">
+          <span>❤ Like</span>
+          <span>💬 Comment</span>
+          <span>↗ Share</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+document.getElementById("postForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const content = document.getElementById("postContent").value.trim();
+  if (!content) return;
+
+  const { error } = await supabaseClient.from("posts").insert({
+    user_id: currentUser.id,
+    content: content,
+  });
+
+  if (!error) {
+    document.getElementById("postContent").value = "";
+    await loadPosts();
+  } else {
+    alert("Could not post: " + error.message);
+  }
+});
+
+init();
+</script>
+
+</body>
+</html>
